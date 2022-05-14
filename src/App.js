@@ -1,26 +1,18 @@
 import "./App.css";
 import List from "./List";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { uid } from "uid";
+import axios from "axios";
 
 function App() {
-  const [contacts, setContacts] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      telp: "08123456789",
-    },
-    {
-      id: 2,
-      name: "Kevin",
-      telp: "08987654321",
-    },
-    {
-      id: 3,
-      name: "Jojon Haw",
-      telp: "08123456789",
-    },
-  ]);
+  const [contacts, setContacts] = useState([]);
+
+  useEffect(() => {
+    // Mengambil data API
+    axios.get("http://localhost:3000/contacts").then((response) => {
+      setContacts(response?.data ?? []);
+    });
+  }, []);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -54,12 +46,25 @@ function App() {
           contact.telp = formData.telp;
         }
       });
+
+      axios
+        .put(`http://localhost:3000/contacts/${isUpdate.id}`, {
+          name: formData.name,
+          telp: formData.telp,
+        })
+        .then((response) => {
+          alert("Data berhasil diupdate");
+        });
     } else {
       // Create contact
-      data.push({
+      let newData = {
         id: uid(),
         name: formData.name,
         telp: formData.telp,
+      };
+      data.push(newData);
+      axios.post("http://localhost:3000/contacts", newData).then((response) => {
+        alert("Data berhasil ditambahkan");
       });
     }
 
@@ -67,31 +72,35 @@ function App() {
     setFormData({
       name: "",
       telp: "",
-    })
+    });
     setIsUpdate({
       id: null,
       status: false,
-    })
+    });
   }
 
-  function handleEdit(id) { 
+  function handleEdit(id) {
     let data = [...contacts];
     let foundData = data.find((contact) => contact.id === id);
 
     setFormData({
       name: foundData.name,
       telp: foundData.telp,
-    })
+    });
 
     setIsUpdate({
       id: id,
       status: true,
-    })
+    });
   }
 
   function handleDelete(id) {
     let data = [...contacts];
     let filteredData = data.filter((contact) => contact.id !== id);
+
+    axios.delete(`http://localhost:3000/contacts/${id}`).then((response) => {
+      alert("Data berhasil dihapus");
+    });
     setContacts(filteredData);
   }
   return (
@@ -126,7 +135,11 @@ function App() {
         </div>
       </form>
 
-      <List handleEdit={handleEdit} handleDelete={handleDelete} data={contacts} />
+      <List
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        data={contacts}
+      />
     </div>
   );
 }
